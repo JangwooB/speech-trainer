@@ -6,65 +6,71 @@
 <title>Voiceiver</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, sans-serif; background: #f5f5f0; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f0; min-height: 100vh; padding: 1.25rem 1rem 3rem; }
   h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
-  .subtitle { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
   .card { background: white; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid rgba(0,0,0,0.08); }
-  .section-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 
-  /* 탭 */
-  .tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
-  .tab { flex: 1; padding: 10px; border-radius: 10px; border: 0.5px solid rgba(0,0,0,0.1); background: white; font-size: 14px; font-weight: 600; cursor: pointer; color: #888; -webkit-appearance: none; }
-  .tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-
-  /* 음성 패널 */
-  .status-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-  .dot.active { background: #1D9E75; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .status-text { font-size: 13px; color: #888; }
-  canvas { width: 100%; border-radius: 12px; background: #f5f5f0; display: block; }
-  #waveform { height: 90px; }
-  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 1rem 0; }
-  .metric { background: #f5f5f0; border-radius: 10px; padding: 0.75rem 1rem; }
-  .metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-  .metric-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
-  .metric-unit { font-size: 11px; color: #888; }
-  .transcript-box { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem; min-height: 72px; background: #fafafa; margin-bottom: 1rem; }
-  .transcript-label { font-size: 11px; color: #888; margin-bottom: 6px; }
-  .transcript-text { font-size: 15px; color: #1a1a1a; line-height: 1.6; min-height: 36px; }
-  .placeholder { color: #bbb; font-size: 13px; }
-
-  /* 입모양 패널 */
+  /* 카메라 */
   .video-wrap { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #111; aspect-ratio: 4/3; }
   #videoEl { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
   #lipCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
-  .lip-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 1rem; }
-  .lip-bar-wrap { margin-top: 1rem; }
-  .lip-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 6px; }
-  .lip-bar-bg { background: #f5f5f0; border-radius: 99px; height: 10px; overflow: hidden; }
-  .lip-bar-fill { height: 100%; border-radius: 99px; background: #1D9E75; transition: width 0.1s; width: 0%; }
-  .lip-status { margin-top: 1rem; border-radius: 10px; padding: 0.75rem 1rem; font-size: 14px; font-weight: 500; text-align: center; background: #f5f5f0; color: #888; }
-  .lip-status.open { background: #E1F5EE; color: #0F6E56; }
-  .lip-status.closed { background: #f5f5f0; color: #888; }
 
-  /* 버튼 */
-  .btn-row { display: flex; gap: 8px; }
-  button.action { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-appearance: none; }
-  .primary { background: #1D9E75; color: white; }
-  .primary:active { background: #0F6E56; }
-  .danger { background: #fff0f0; color: #E24B4A; border: 0.5px solid #E24B4A !important; }
-  button:disabled { opacity: 0.4; }
+  /* 입 벌림 바 */
+  .bar-wrap { margin-top: 0.75rem; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 5px; }
+  .bar-bg { background: #f5f5f0; border-radius: 99px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 0.08s; width: 0%; }
+  .bar-fill.lip { background: #1D9E75; }
+  .lip-status { margin-top: 0.75rem; border-radius: 10px; padding: 0.6rem 1rem; font-size: 14px; font-weight: 500; text-align: center; background: #f5f5f0; color: #888; }
+  .lip-status.open { background: #E1F5EE; color: #0F6E56; }
+
+  /* 데시벨 */
+  .db-display { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 10px; }
+  .db-number { font-size: 36px; font-weight: 700; color: #1a1a1a; line-height: 1; }
+  .db-unit { font-size: 14px; color: #888; margin-left: 4px; margin-bottom: 4px; }
+  .db-level-badge { font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 99px; }
+  .level-whisper { background: #E6F1FB; color: #185FA5; }
+  .level-normal  { background: #E1F5EE; color: #0F6E56; }
+  .level-loud    { background: #FAEEDA; color: #854F0B; }
+  .level-shout   { background: #FCEBEB; color: #A32D2D; }
+  .level-silent  { background: #f5f5f0; color: #888; }
+
+  /* 데시벨 바 — 3구간 색상 */
+  .db-bar-bg { background: #f5f5f0; border-radius: 99px; height: 14px; overflow: hidden; position: relative; }
+  .db-bar-fill { height: 100%; border-radius: 99px; transition: width 0.1s, background 0.1s; width: 0%; }
+  .db-range-labels { display: flex; justify-content: space-between; margin-top: 5px; }
+  .db-range-labels span { font-size: 10px; color: #bbb; }
+
+  /* 인식 텍스트 */
+  .transcript-box { border: 0.5px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 1rem; min-height: 80px; background: #fafafa; margin-bottom: 1rem; }
+  .transcript-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .transcript-text { font-size: 17px; color: #1a1a1a; line-height: 1.6; min-height: 40px; }
+  .placeholder { color: #bbb; font-size: 14px; }
 
   /* 피드백 */
-  .feedback-title { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 10px; }
   .feedback-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 14px; line-height: 1.5; color: #1a1a1a; }
   .tag { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
   .tag.good { background: #E1F5EE; color: #0F6E56; }
-  .tag.tip { background: #FAEEDA; color: #854F0B; }
+  .tag.tip  { background: #FAEEDA; color: #854F0B; }
+  .tag.warn { background: #FCEBEB; color: #A32D2D; }
+
+  /* 상태 */
+  .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 0.75rem; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+  .dot.active { background: #E24B4A; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-text { font-size: 13px; color: #888; }
+
+  /* 버튼 */
+  .btn-row { display: flex; gap: 8px; }
+  button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-appearance: none; }
+  .primary  { background: #1D9E75; color: white; }
+  .primary:active { background: #0F6E56; }
+  .stop-btn { background: #fff0f0; color: #E24B4A; border: 0.5px solid #ffcccc; }
+  button:disabled { opacity: 0.4; }
   .hidden { display: none; }
-  .panel { display: none; }
-  .panel.active { display: block; }
+  .section-gap { margin-top: 1rem; }
 </style>
 </head>
 <body>
@@ -72,255 +78,130 @@
 <h1>Voiceiver</h1>
 <p class="subtitle">청각 장애인을 위한 발화 시각화 도우미</p>
 
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('voice', this)">음성 분석</button>
-  <button class="tab" onclick="switchTab('lip', this)">입모양 트래킹</button>
+<!-- 카메라 + 입모양 -->
+<div class="card">
+  <div class="status-row">
+    <div class="dot" id="dot"></div>
+    <span class="status-text" id="status">시작 버튼을 눌러주세요</span>
+  </div>
+  <div class="video-wrap">
+    <video id="videoEl" autoplay playsinline muted></video>
+    <canvas id="lipCanvas"></canvas>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>입 벌림</span><span id="lipPct">0%</span></div>
+    <div class="bar-bg"><div class="bar-fill lip" id="lipBar"></div></div>
+  </div>
+  <div class="lip-status" id="lipStatus">입이 닫혀있어요</div>
 </div>
 
-<!-- 음성 패널 -->
-<div class="panel active" id="voicePanel">
-  <div class="card">
-    <div class="status-bar">
-      <div class="dot" id="dot"></div>
-      <span class="status-text" id="status">마이크 버튼을 눌러 시작하세요</span>
+<!-- 데시벨 -->
+<div class="card">
+  <div class="db-display">
+    <div style="display:flex;align-items:flex-end;">
+      <span class="db-number" id="dbNumber">--</span>
+      <span class="db-unit">dB</span>
     </div>
-    <canvas id="waveform"></canvas>
-    <div class="metrics">
-      <div class="metric"><div class="metric-label">음량</div><div><span class="metric-value" id="vol">0</span><span class="metric-unit"> dB</span></div></div>
-      <div class="metric"><div class="metric-label">주파수</div><div><span class="metric-value" id="freq">-</span><span class="metric-unit"> Hz</span></div></div>
-      <div class="metric"><div class="metric-label">안정성</div><div><span class="metric-value" id="stab">-</span></div></div>
-      <div class="metric"><div class="metric-label">발화 시간</div><div><span class="metric-value" id="timer">0</span><span class="metric-unit"> 초</span></div></div>
-    </div>
+    <span class="db-level-badge level-silent" id="dbBadge">대기 중</span>
   </div>
-  <div class="card">
-    <div class="transcript-box">
-      <div class="transcript-label">인식된 텍스트</div>
-      <div class="transcript-text placeholder" id="transcript">말씀해주시면 여기에 표시됩니다...</div>
-    </div>
-    <div class="btn-row">
-      <button class="action primary" id="startBtn" onclick="startRec()">녹음 시작</button>
-      <button class="action danger" id="stopBtn" onclick="stopRec()" disabled>중지</button>
-    </div>
+  <div class="db-bar-bg">
+    <div class="db-bar-fill" id="dbBar"></div>
   </div>
-  <div class="card hidden" id="feedbackCard">
-    <div class="feedback-title">발음 피드백</div>
-    <div id="feedbackItems"></div>
+  <div class="db-range-labels">
+    <span>속삭임</span>
+    <span>일상 대화</span>
+    <span>큰 소리</span>
   </div>
 </div>
 
-<!-- 입모양 패널 -->
-<div class="panel" id="lipPanel">
-  <div class="card">
-    <div class="section-title">카메라 입모양 분석</div>
-    <div class="video-wrap">
-      <video id="videoEl" autoplay playsinline muted></video>
-      <canvas id="lipCanvas"></canvas>
-    </div>
-    <div class="lip-bar-wrap">
-      <div class="lip-bar-label"><span>입 벌림</span><span id="lipPct">0%</span></div>
-      <div class="lip-bar-bg"><div class="lip-bar-fill" id="lipBar"></div></div>
-    </div>
-    <div class="lip-metrics">
-      <div class="metric"><div class="metric-label">입 너비</div><div><span class="metric-value" id="lipW">-</span><span class="metric-unit"> px</span></div></div>
-      <div class="metric"><div class="metric-label">입 높이</div><div><span class="metric-value" id="lipH">-</span><span class="metric-unit"> px</span></div></div>
-    </div>
-    <div class="lip-status closed" id="lipStatus">입이 닫혀있어요</div>
+<!-- 인식 텍스트 -->
+<div class="card">
+  <div class="transcript-box">
+    <div class="transcript-label">인식된 텍스트</div>
+    <div class="transcript-text placeholder" id="transcript">말씀해주시면 여기에 표시됩니다...</div>
   </div>
-  <div class="card">
-    <div class="btn-row">
-      <button class="action primary" id="camStartBtn" onclick="startCamera()">카메라 시작</button>
-      <button class="action danger" id="camStopBtn" onclick="stopCamera()" disabled>카메라 중지</button>
-    </div>
+  <div class="btn-row">
+    <button class="primary" id="startBtn" onclick="startAll()">시작</button>
+    <button class="stop-btn" id="stopBtn" onclick="stopAll()" disabled>중지</button>
   </div>
+</div>
+
+<!-- 피드백 -->
+<div class="card hidden" id="feedbackCard">
+  <div class="transcript-label" style="margin-bottom:10px;">피드백</div>
+  <div id="feedbackItems"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
 <script>
-/* ── 탭 전환 ── */
-function switchTab(name, el) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  el.classList.add('active');
-  document.getElementById(name + 'Panel').classList.add('active');
-}
-
-/* ── 음성 분석 ── */
-var audioCtx, analyser, source, stream, rafId, recognition, timerInterval, startTime;
-var volHistory = [];
-var waveCanvas = document.getElementById('waveform');
-var wCtx = waveCanvas.getContext('2d');
-
-function resizeWave() {
-  waveCanvas.width = waveCanvas.offsetWidth * window.devicePixelRatio;
-  waveCanvas.height = 90 * window.devicePixelRatio;
-  drawIdle();
-}
-resizeWave();
-window.addEventListener('resize', resizeWave);
-
-function drawIdle() {
-  var w = waveCanvas.width, h = waveCanvas.height;
-  wCtx.clearRect(0, 0, w, h);
-  wCtx.strokeStyle = 'rgba(136,135,128,0.3)';
-  wCtx.lineWidth = 1.5;
-  wCtx.beginPath(); wCtx.moveTo(0, h/2); wCtx.lineTo(w, h/2); wCtx.stroke();
-}
-
-function drawWave(data, len) {
-  var w = waveCanvas.width, h = waveCanvas.height;
-  wCtx.clearRect(0, 0, w, h);
-  wCtx.strokeStyle = '#1D9E75'; wCtx.lineWidth = 2;
-  wCtx.beginPath();
-  var sw = w / len, x = 0;
-  for (var i = 0; i < len; i++) {
-    var y = (data[i] / 128.0 * h) / 2;
-    i === 0 ? wCtx.moveTo(x, y) : wCtx.lineTo(x, y);
-    x += sw;
-  }
-  wCtx.stroke();
-}
-
-function getVol(data) {
-  var sum = 0;
-  for (var i = 0; i < data.length; i++) sum += Math.pow(data[i] - 128, 2);
-  var rms = Math.sqrt(sum / data.length);
-  return rms < 1 ? null : Math.round(20 * Math.log10(rms / 128));
-}
-
-function getFreq(fdata, sr) {
-  var max = 0, idx = 0;
-  for (var i = 0; i < fdata.length; i++) { if (fdata[i] > max) { max = fdata[i]; idx = i; } }
-  return Math.round((idx * sr) / (fdata.length * 2));
-}
-
-function getStab(h) {
-  if (h.length < 5) return '-';
-  var mean = h.reduce(function(a,b){return a+b},0) / h.length;
-  var std = Math.sqrt(h.reduce(function(a,b){return a+Math.pow(b-mean,2)},0) / h.length);
-  return std < 3 ? '안정' : std < 8 ? '보통' : '불안정';
-}
-
-function loop() {
-  if (!analyser) return;
-  var td = new Uint8Array(analyser.fftSize);
-  var fd = new Uint8Array(analyser.frequencyBinCount);
-  analyser.getByteTimeDomainData(td);
-  analyser.getByteFrequencyData(fd);
-  drawWave(td, analyser.fftSize);
-  var v = getVol(td);
-  if (v !== null) {
-    volHistory.push(Math.abs(v));
-    if (volHistory.length > 30) volHistory.shift();
-    document.getElementById('vol').textContent = v;
-    var f = getFreq(fd, audioCtx.sampleRate);
-    document.getElementById('freq').textContent = f > 50 ? f : '-';
-    document.getElementById('stab').textContent = getStab(volHistory);
-  }
-  rafId = requestAnimationFrame(loop);
-}
-
-function startRec() {
-  navigator.mediaDevices.getUserMedia({audio: true}).then(function(s) {
-    stream = s;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    startTime = Date.now(); volHistory = [];
-    timerInterval = setInterval(function(){
-      document.getElementById('timer').textContent = Math.round((Date.now()-startTime)/1000);
-    }, 1000);
-    loop();
-    document.getElementById('dot').classList.add('active');
-    document.getElementById('status').textContent = '녹음 중...';
-    document.getElementById('startBtn').disabled = true;
-    document.getElementById('stopBtn').disabled = false;
-    document.getElementById('feedbackCard').classList.add('hidden');
-    startASR();
-  }).catch(function() {
-    document.getElementById('status').textContent = '마이크 권한이 필요합니다.';
-  });
-}
-
-function stopRec() {
-  if (rafId) cancelAnimationFrame(rafId);
-  if (stream) stream.getTracks().forEach(function(t){t.stop();});
-  if (audioCtx) audioCtx.close();
-  if (recognition) try { recognition.stop(); } catch(e) {}
-  clearInterval(timerInterval);
-  analyser = null; drawIdle();
-  document.getElementById('dot').classList.remove('active');
-  document.getElementById('status').textContent = '분석 완료';
-  document.getElementById('startBtn').disabled = false;
-  document.getElementById('stopBtn').disabled = true;
-  showFeedback();
-}
-
-function startASR() {
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  recognition = new SR();
-  recognition.lang = 'ko-KR'; recognition.continuous = true; recognition.interimResults = true;
-  recognition.onresult = function(e) {
-    var txt = '';
-    for (var i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
-    var el = document.getElementById('transcript');
-    el.classList.remove('placeholder');
-    el.textContent = txt || '...';
-  };
-  recognition.onerror = function() {};
-  recognition.start();
-}
-
-function showFeedback() {
-  var txt = document.getElementById('transcript').textContent;
-  var stab = document.getElementById('stab').textContent;
-  var vol = parseInt(document.getElementById('vol').textContent) || 0;
-  var items = [];
-  var ok = txt && txt !== '말씀해주시면 여기에 표시됩니다...' && txt !== '...';
-  if (ok) {
-    items.push({tag:'good', text:'"'+txt.slice(0,20)+(txt.length>20?'...':'')+'" 발화가 인식되었습니다.'});
-  } else {
-    items.push({tag:'tip', text:'발화가 인식되지 않았습니다. 조금 더 크고 천천히 말씀해보세요.'});
-  }
-  if (stab === '불안정') items.push({tag:'tip', text:'음량 변동이 큽니다. 일정한 크기를 유지해보세요.'});
-  else if (stab === '안정') items.push({tag:'good', text:'음량이 안정적입니다. 좋은 발화 패턴이에요.'});
-  if (vol < -20) items.push({tag:'tip', text:'목소리가 작습니다. 마이크에 더 가까이 대보세요.'});
-  document.getElementById('feedbackItems').innerHTML = items.map(function(i){
-    return '<div class="feedback-item"><span class="tag '+i.tag+'">'+(i.tag==='good'?'잘됨':'개선')+'</span><span>'+i.text+'</span></div>';
-  }).join('');
-  document.getElementById('feedbackCard').classList.remove('hidden');
-}
-
-/* ── 입모양 트래킹 ── */
-var camStream, faceMesh, camera;
+var recognition, faceMesh, camera;
+var audioCtx, analyser, micSource, micStream, rafId;
 var lipCanvas = document.getElementById('lipCanvas');
 var lCtx = lipCanvas.getContext('2d');
 var videoEl = document.getElementById('videoEl');
 
-// 입술 랜드마크 인덱스 (MediaPipe Face Mesh)
 var LIPS_OUTER = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
 var LIP_TOP = 13, LIP_BOTTOM = 14, LIP_LEFT = 61, LIP_RIGHT = 291;
 
+/* ── 데시벨 레벨 정의 ──
+   실제 생활 소음 기준 (마이크 입력 기준 상대값):
+   속삭임  ~30dB SPL  → rms 기반 낮은 값
+   일상대화 ~60dB SPL
+   큰소리  ~75dB SPL
+   소리침  ~85dB+ SPL
+   여기서는 Web Audio rms → dBFS로 계산 후 구간 매핑 */
+function getDbLevel(db) {
+  /* dBFS 기준: -60~0 범위를 4구간으로 */
+  if (db < -50) return { label: '무음', cls: 'level-silent', pct: 0, color: '#ccc' };
+  if (db < -35) return { label: '속삭임', cls: 'level-whisper', pct: Math.round((db+50)/15*33), color: '#378ADD' };
+  if (db < -20) return { label: '일상 대화', cls: 'level-normal', pct: Math.round(33+(db+35)/15*34), color: '#1D9E75' };
+  if (db < -10) return { label: '큰 소리', cls: 'level-loud', pct: Math.round(67+(db+20)/10*20), color: '#EF9F27' };
+  return { label: '소리치는 중', cls: 'level-shout', pct: Math.min(87+Math.round((db+10)/10*13), 100), color: '#E24B4A' };
+}
+
+function getRms(data) {
+  var sum = 0;
+  for (var i = 0; i < data.length; i++) sum += Math.pow(data[i] - 128, 2);
+  return Math.sqrt(sum / data.length);
+}
+
+function audioLoop() {
+  if (!analyser) return;
+  var td = new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(td);
+  var rms = getRms(td);
+  if (rms > 1) {
+    var db = Math.round(20 * Math.log10(rms / 128));
+    var lv = getDbLevel(db);
+    document.getElementById('dbNumber').textContent = db;
+    var badge = document.getElementById('dbBadge');
+    badge.textContent = lv.label;
+    badge.className = 'db-level-badge ' + lv.cls;
+    var bar = document.getElementById('dbBar');
+    bar.style.width = lv.pct + '%';
+    bar.style.background = lv.color;
+  } else {
+    document.getElementById('dbNumber').textContent = '--';
+    document.getElementById('dbBadge').textContent = '무음';
+    document.getElementById('dbBadge').className = 'db-level-badge level-silent';
+    document.getElementById('dbBar').style.width = '0%';
+  }
+  rafId = requestAnimationFrame(audioLoop);
+}
+
+/* ── 입모양 트래킹 ── */
 function onFaceResults(results) {
   lipCanvas.width = videoEl.videoWidth || lipCanvas.offsetWidth;
   lipCanvas.height = videoEl.videoHeight || lipCanvas.offsetHeight;
   lCtx.clearRect(0, 0, lipCanvas.width, lipCanvas.height);
-
-  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
-
+  if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) return;
   var lm = results.multiFaceLandmarks[0];
   var W = lipCanvas.width, H = lipCanvas.height;
-
-  // 입술 외곽선 그리기
   lCtx.beginPath();
   LIPS_OUTER.forEach(function(idx, i) {
     var p = lm[idx];
-    var x = p.x * W, y = p.y * H;
-    i === 0 ? lCtx.moveTo(x, y) : lCtx.lineTo(x, y);
+    i === 0 ? lCtx.moveTo(p.x*W, p.y*H) : lCtx.lineTo(p.x*W, p.y*H);
   });
   lCtx.closePath();
   lCtx.strokeStyle = '#1D9E75';
@@ -328,61 +209,118 @@ function onFaceResults(results) {
   lCtx.stroke();
   lCtx.fillStyle = 'rgba(29,158,117,0.15)';
   lCtx.fill();
-
-  // 입 벌림 계산
-  var top = lm[LIP_TOP], bottom = lm[LIP_BOTTOM];
-  var left = lm[LIP_LEFT], right = lm[LIP_RIGHT];
-  var openH = Math.abs(bottom.y - top.y) * H;
-  var openW = Math.abs(right.x - left.x) * W;
-  var ratio = Math.min(openH / (openW * 0.6), 1.0);
-  var pct = Math.round(ratio * 100);
-
+  var openH = Math.abs(lm[LIP_BOTTOM].y - lm[LIP_TOP].y) * H;
+  var openW = Math.abs(lm[LIP_RIGHT].x - lm[LIP_LEFT].x) * W;
+  var pct = Math.min(Math.round((openH / (openW * 0.6)) * 100), 100);
   document.getElementById('lipBar').style.width = pct + '%';
   document.getElementById('lipPct').textContent = pct + '%';
-  document.getElementById('lipW').textContent = Math.round(openW);
-  document.getElementById('lipH').textContent = Math.round(openH);
-
   var statusEl = document.getElementById('lipStatus');
   if (pct > 20) {
     statusEl.textContent = '입이 열려있어요 (' + pct + '%)';
     statusEl.className = 'lip-status open';
   } else {
     statusEl.textContent = '입이 닫혀있어요';
-    statusEl.className = 'lip-status closed';
+    statusEl.className = 'lip-status';
   }
 }
 
-function startCamera() {
-  document.getElementById('camStartBtn').disabled = true;
-  document.getElementById('camStopBtn').disabled = false;
+/* ── 전체 시작 ── */
+function startAll() {
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('dot').classList.add('active');
+  document.getElementById('status').textContent = '분석 중...';
+  document.getElementById('feedbackCard').classList.add('hidden');
 
-  faceMesh = new FaceMesh({locateFile: function(file) {
-    return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + file;
+  // 마이크 (데시벨용)
+  navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(s) {
+    micStream = s;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    micSource = audioCtx.createMediaStreamSource(s);
+    micSource.connect(analyser);
+    audioLoop();
+  }).catch(function() {
+    document.getElementById('status').textContent = '마이크 권한이 필요합니다.';
+  });
+
+  // 카메라 + FaceMesh
+  faceMesh = new FaceMesh({locateFile: function(f) {
+    return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + f;
   }});
-  faceMesh.setOptions({maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5});
+  faceMesh.setOptions({maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5});
   faceMesh.onResults(onFaceResults);
-
   camera = new Camera(videoEl, {
-    onFrame: async function() {
-      await faceMesh.send({image: videoEl});
-    },
+    onFrame: async function() { await faceMesh.send({image: videoEl}); },
     width: 640, height: 480
   });
   camera.start();
+
+  // 음성 인식
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recognition = new SR();
+    recognition.lang = 'ko-KR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = function(e) {
+      var txt = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      var el = document.getElementById('transcript');
+      el.classList.remove('placeholder');
+      el.textContent = txt || '...';
+    };
+    recognition.onerror = function() {};
+    recognition.start();
+  }
 }
 
-function stopCamera() {
+/* ── 전체 중지 ── */
+function stopAll() {
+  if (rafId) cancelAnimationFrame(rafId);
   if (camera) camera.stop();
-  if (camStream) camStream.getTracks().forEach(function(t){t.stop();});
+  if (recognition) try { recognition.stop(); } catch(e) {}
+  if (micStream) micStream.getTracks().forEach(function(t){t.stop();});
+  if (audioCtx) audioCtx.close();
+  analyser = null;
   lCtx.clearRect(0, 0, lipCanvas.width, lipCanvas.height);
-  document.getElementById('camStartBtn').disabled = false;
-  document.getElementById('camStopBtn').disabled = true;
-  document.getElementById('lipStatus').textContent = '입이 닫혀있어요';
-  document.getElementById('lipStatus').className = 'lip-status closed';
+  document.getElementById('dot').classList.remove('active');
+  document.getElementById('status').textContent = '분석 완료';
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
   document.getElementById('lipBar').style.width = '0%';
   document.getElementById('lipPct').textContent = '0%';
-  document.getElementById('lipW').textContent = '-';
-  document.getElementById('lipH').textContent = '-';
+  document.getElementById('lipStatus').textContent = '입이 닫혀있어요';
+  document.getElementById('lipStatus').className = 'lip-status';
+  document.getElementById('dbBar').style.width = '0%';
+  document.getElementById('dbNumber').textContent = '--';
+  document.getElementById('dbBadge').textContent = '대기 중';
+  document.getElementById('dbBadge').className = 'db-level-badge level-silent';
+  showFeedback();
+}
+
+function showFeedback() {
+  var txt = document.getElementById('transcript').textContent;
+  var badge = document.getElementById('dbBadge').textContent;
+  var items = [];
+  var ok = txt && txt !== '말씀해주시면 여기에 표시됩니다...' && txt !== '...';
+  if (ok) {
+    items.push({tag:'good', text:'"' + txt.slice(0,20) + (txt.length>20?'...':'') + '" 발화가 인식되었습니다.'});
+  } else {
+    items.push({tag:'tip', text:'발화가 인식되지 않았습니다. 더 크고 천천히 말씀해보세요.'});
+  }
+  if (badge === '소리치는 중') {
+    items.push({tag:'warn', text:'목소리가 매우 큽니다. 조금 더 부드럽게 말씀해보세요.'});
+  } else if (badge === '속삭임') {
+    items.push({tag:'tip', text:'목소리가 작습니다. 일상 대화 수준으로 조금 더 크게 말씀해보세요.'});
+  } else if (badge === '일상 대화') {
+    items.push({tag:'good', text:'목소리 크기가 적절합니다.'});
+  }
+  document.getElementById('feedbackItems').innerHTML = items.map(function(i){
+    return '<div class="feedback-item"><span class="tag '+i.tag+'">'+(i.tag==='good'?'잘됨':i.tag==='warn'?'주의':'개선')+'</span><span>'+i.text+'</span></div>';
+  }).join('');
+  document.getElementById('feedbackCard').classList.remove('hidden');
 }
 </script>
 </body>
