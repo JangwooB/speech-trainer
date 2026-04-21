@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>발음 트레이너</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f0; min-height: 100vh; padding: 1.5rem 1rem; }
+  h1 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .card { background: white; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid rgba(0,0,0,0.08); }
+  .status-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+  .dot.active { background: #1D9E75; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-text { font-size: 13px; color: #888; }
+  canvas { width: 100%; height: 100px; border-radius: 12px; background: #f5f5f0; display: block; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 1rem 0; }
+  .metric { background: #f5f5f0; border-radius: 10px; padding: 0.75rem 1rem; }
+  .metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+  .metric-unit { font-size: 11px; color: #888; }
+  .transcript-box { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem; min-height: 80px; background: #fafafa; margin-bottom: 1rem; }
+  .transcript-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .transcript-text { font-size: 15px; color: #1a1a1a; line-height: 1.6; min-height: 40px; }
+  .placeholder { color: #bbb; font-size: 13px; }
+  .btn-row { display: flex; gap: 8px; }
+  button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-appearance: none; }
+  .primary { background: #1D9E75; color: white; }
+  .primary:active { background: #0F6E56; }
+  .danger { background: #fff0f0; color: #E24B4A; border: 0.5px solid #E24B4A; }
+  .danger:active { background: #ffe0e0; }
+  button:disabled { opacity: 0.4; }
+  .feedback { margin-top: 1rem; }
+  .feedback-title { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 10px; }
+  .feedback-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 14px; line-height: 1.5; color: #1a1a1a; }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .tag.good { background: #E1F5EE; color: #0F6E56; }
+  .tag.tip { background: #FAEEDA; color: #854F0B; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>발음 트레이너</h1>
+<p class="subtitle">청각 장애인을 위한 발화 시각화 도우미</p>
+
+<div class="card">
+  <div class="status-bar">
+    <div class="dot" id="dot"></div>
+    <span class="status-text" id="status">마이크 버튼을 눌러 시작하세요</span>
+  </div>
+  <canvas id="waveform"></canvas>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">음량</div><div><span class="metric-value" id="vol">0</span><span class="metric-unit"> dB</span></div></div>
+    <div class="metric"><div class="metric-label">주파수</div><div><span class="metric-value" id="freq">-</span><span class="metric-unit"> Hz</span></div></div>
+    <div class="metric"><div class="metric-label">안정성</div><div><span class="metric-value" id="stab">-</span></div></div>
+    <div class="metric"><div class="metric-label">발화 시간</div><div><span class="metric-value" id="timer">0</span><span class="metric-unit"> 초</span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="transcript-box">
+    <div class="transcript-label">인식된 텍스트</div>
+    <div class="transcript-text placeholder" id="transcript">말씀해주시면 여기에 표시됩니다...</div>
+  </div>
+  <div class="btn-row">
+    <button class="primary" id="startBtn" onclick="startRec()">녹음 시작</button>
+    <button class="danger" id="stopBtn" onclick="stopRec()" disabled>중지</button>
+  </div>
+</div>
+
+<div class="card hidden" id="feedbackCard">
+  <div class="feedback">
+    <div class="feedback-title">발음 피드백</div>
+    <div id="feedbackItems"></div>
+  </div>
+</div>
+
+<script>
+var audioCtx, analyser, source, stream, rafId, recognition, timerInterval, startTime;
+var volHistory = [];
+var canvas = document.getElementById('waveform');
+var ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = 100 * window.devicePixelRatio;
+  drawIdle();
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawIdle() {
+  var w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(136,135,128,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+}
+
+function drawWave(data, len) {
+  var w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#1D9E75';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  var sw = w / len, x = 0;
+  for (var i = 0; i < len; i++) {
+    var y = (data[i] / 128.0 * h) / 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    x += sw;
+  }
+  ctx.stroke();
+}
+
+function getVol(data) {
+  var sum = 0;
+  for (var i = 0; i < data.length; i++) sum += Math.pow(data[i] - 128, 2);
+  var rms = Math.sqrt(sum / data.length);
+  return rms < 1 ? null : Math.round(20 * Math.log10(rms / 128));
+}
+
+function getFreq(fdata, sr) {
+  var max = 0, idx = 0;
+  for (var i = 0; i < fdata.length; i++) { if (fdata[i] > max) { max = fdata[i]; idx = i; } }
+  return Math.round((idx * sr) / (fdata.length * 2));
+}
+
+function getStab(h) {
+  if (h.length < 5) return '-';
+  var mean = h.reduce(function(a, b) { return a + b; }, 0) / h.length;
+  var std = Math.sqrt(h.reduce(function(a, b) { return a + Math.pow(b - mean, 2); }, 0) / h.length);
+  return std < 3 ? '안정' : std < 8 ? '보통' : '불안정';
+}
+
+function loop() {
+  if (!analyser) return;
+  var td = new Uint8Array(analyser.fftSize);
+  var fd = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteTimeDomainData(td);
+  analyser.getByteFrequencyData(fd);
+  drawWave(td, analyser.fftSize);
+  var v = getVol(td);
+  if (v !== null) {
+    volHistory.push(Math.abs(v));
+    if (volHistory.length > 30) volHistory.shift();
+    document.getElementById('vol').textContent = v;
+    var f = getFreq(fd, audioCtx.sampleRate);
+    document.getElementById('freq').textContent = f > 50 ? f : '-';
+    document.getElementById('stab').textContent = getStab(volHistory);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function startRec() {
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
+    stream = s;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    startTime = Date.now();
+    volHistory = [];
+    timerInterval = setInterval(function() {
+      document.getElementById('timer').textContent = Math.round((Date.now() - startTime) / 1000);
+    }, 1000);
+    loop();
+    document.getElementById('dot').classList.add('active');
+    document.getElementById('status').textContent = '녹음 중...';
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('feedbackCard').classList.add('hidden');
+    startASR();
+  }).catch(function(e) {
+    document.getElementById('status').textContent = '마이크 권한이 필요합니다. 설정에서 허용해주세요.';
+  });
+}
+
+function stopRec() {
+  if (rafId) cancelAnimationFrame(rafId);
+  if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+  if (audioCtx) audioCtx.close();
+  if (recognition) try { recognition.stop(); } catch(e) {}
+  clearInterval(timerInterval);
+  analyser = null;
+  drawIdle();
+  document.getElementById('dot').classList.remove('active');
+  document.getElementById('status').textContent = '분석 완료';
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  showFeedback();
+}
+
+function startASR() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recognition = new SR();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onresult = function(e) {
+    var txt = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      txt += e.results[i][0].transcript;
+    }
+    var el = document.getElementById('transcript');
+    el.classList.remove('placeholder');
+    el.textContent = txt || '...';
+  };
+  recognition.onerror = function() {};
+  recognition.start();
+}
+
+function showFeedback() {
+  var txt = document.getElementById('transcript').textContent;
+  var stab = document.getElementById('stab').textContent;
+  var vol = parseInt(document.getElementById('vol').textContent) || 0;
+  var items = [];
+  var recognised = txt && txt !== '말씀해주시면 여기에 표시됩니다...' && txt !== '...';
+  if (recognised) {
+    items.push({ tag: 'good', text: '"' + txt.slice(0, 20) + (txt.length > 20 ? '...' : '') + '" 발화가 인식되었습니다.' });
+  } else {
+    items.push({ tag: 'tip', text: '발화가 인식되지 않았습니다. 조금 더 크고 천천히 말씀해보세요.' });
+  }
+  if (stab === '불안정') {
+    items.push({ tag: 'tip', text: '음량 변동이 큽니다. 일정한 크기를 유지해보세요.' });
+  } else if (stab === '안정') {
+    items.push({ tag: 'good', text: '음량이 안정적입니다. 좋은 발화 패턴이에요.' });
+  }
+  if (vol < -20) {
+    items.push({ tag: 'tip', text: '목소리가 작습니다. 마이크에 더 가까이 대보세요.' });
+  }
+  document.getElementById('feedbackItems').innerHTML = items.map(function(i) {
+    return '<div class="feedback-item"><span class="tag ' + i.tag + '">' + (i.tag === 'good' ? '잘됨' : '개선') + '</span><span>' + i.text + '</span></div>';
+  }).join('');
+  document.getElementById('feedbackCard').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
