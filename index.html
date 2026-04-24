@@ -7,8 +7,11 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, sans-serif; background: #f5f5f0; min-height: 100vh; padding: 1.25rem 1rem 3rem; }
-  h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
-  .subtitle { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+  .lang-select { font-size: 13px; font-weight: 500; color: #1a1a1a; background: white; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 10px; cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px; }
+
   .card { background: white; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid rgba(0,0,0,0.08); }
 
   .video-wrap { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #111; }
@@ -65,8 +68,26 @@
 </head>
 <body>
 
-<h1>Voiceiver</h1>
-<p class="subtitle">청각 장애인을 위한 발화 시각화 도우미</p>
+<div class="header">
+  <h1>Voiceiver</h1>
+  <select class="lang-select" id="langSelect">
+    <option value="ko-KR">🇰🇷 한국어</option>
+    <option value="en-US">🇺🇸 English</option>
+    <option value="en-GB">🇬🇧 English (UK)</option>
+    <option value="ja-JP">🇯🇵 日本語</option>
+    <option value="zh-CN">🇨🇳 中文 (简体)</option>
+    <option value="zh-TW">🇹🇼 中文 (繁體)</option>
+    <option value="es-ES">🇪🇸 Español</option>
+    <option value="fr-FR">🇫🇷 Français</option>
+    <option value="de-DE">🇩🇪 Deutsch</option>
+    <option value="pt-BR">🇧🇷 Português</option>
+    <option value="ru-RU">🇷🇺 Русский</option>
+    <option value="ar-SA">🇸🇦 العربية</option>
+    <option value="hi-IN">🇮🇳 हिन्दी</option>
+    <option value="vi-VN">🇻🇳 Tiếng Việt</option>
+    <option value="th-TH">🇹🇭 ภาษาไทย</option>
+  </select>
+</div>
 
 <div class="card">
   <div class="status-row">
@@ -130,7 +151,6 @@ var videoEl = document.getElementById('videoEl');
 var LIPS_OUTER = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
 var LIP_TOP = 13, LIP_BOTTOM = 14, LIP_LEFT = 61, LIP_RIGHT = 291;
 
-/* 캔버스를 실제 렌더링된 비디오 크기에 맞게 동기화 */
 function syncCanvas() {
   var rect = videoEl.getBoundingClientRect();
   lipCanvas.width = rect.width;
@@ -142,13 +162,8 @@ function onFaceResults(results) {
   var W = lipCanvas.width, H = lipCanvas.height;
   lCtx.clearRect(0, 0, W, H);
   if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) return;
-
   var lm = results.multiFaceLandmarks[0];
-
-  /* 미러링(scaleX(-1)) 때문에 x 좌표를 반전 */
-  function px(lmPoint) {
-    return { x: (1 - lmPoint.x) * W, y: lmPoint.y * H };
-  }
+  function px(p) { return { x: (1 - p.x) * W, y: p.y * H }; }
 
   lCtx.beginPath();
   LIPS_OUTER.forEach(function(idx, i) {
@@ -170,7 +185,6 @@ function onFaceResults(results) {
 
   document.getElementById('lipBar').style.width = pct + '%';
   document.getElementById('lipPct').textContent = pct + '%';
-
   var statusEl = document.getElementById('lipStatus');
   if (pct > 20) {
     statusEl.textContent = '입이 열려있어요 (' + pct + '%)';
@@ -181,7 +195,6 @@ function onFaceResults(results) {
   }
 }
 
-/* 데시벨 */
 function getDbLevel(db) {
   if (db < -50) return { label:'무음', cls:'level-silent', pct:0, color:'#ccc' };
   if (db < -35) return { label:'속삭임', cls:'level-whisper', pct:Math.round((db+50)/15*33), color:'#378ADD' };
@@ -215,6 +228,32 @@ function audioLoop() {
   rafId = requestAnimationFrame(audioLoop);
 }
 
+function startASR() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  var lang = document.getElementById('langSelect').value;
+  recognition = new SR();
+  recognition.lang = lang;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onresult = function(e) {
+    var txt = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+    var el = document.getElementById('transcript');
+    el.classList.remove('placeholder');
+    el.textContent = txt || '...';
+  };
+  recognition.onerror = function() {};
+  recognition.start();
+}
+
+document.getElementById('langSelect').addEventListener('change', function() {
+  if (recognition) {
+    try { recognition.stop(); } catch(e) {}
+    setTimeout(startASR, 300);
+  }
+});
+
 function startAll() {
   document.getElementById('startBtn').disabled = true;
   document.getElementById('stopBtn').disabled = false;
@@ -245,22 +284,7 @@ function startAll() {
   });
   camera.start();
 
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SR) {
-    recognition = new SR();
-    recognition.lang = 'ko-KR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = function(e) {
-      var txt = '';
-      for (var i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
-      var el = document.getElementById('transcript');
-      el.classList.remove('placeholder');
-      el.textContent = txt || '...';
-    };
-    recognition.onerror = function() {};
-    recognition.start();
-  }
+  startASR();
 }
 
 function stopAll() {
