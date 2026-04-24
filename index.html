@@ -59,7 +59,6 @@
     position: fixed;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
     font-size: 32px;
     font-weight: 700;
     color: var(--text-primary);
@@ -67,17 +66,15 @@
     user-select: none;
     cursor: pointer;
     z-index: 1000;
-    transition: top 0.6s cubic-bezier(0.4,0,0.2,1),
-                left 0.6s cubic-bezier(0.4,0,0.2,1),
-                font-size 0.6s cubic-bezier(0.4,0,0.2,1),
-                transform 0.6s cubic-bezier(0.4,0,0.2,1);
+    transform-origin: left top;
+    will-change: transform, font-size;
+    transform: translate(-50%, -50%) scale(1);
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+                font-size 0.65s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* 상단으로 이동한 상태 */
+  /* 상단으로 이동한 상태 — JS에서 인라인으로 목표 위치 계산 후 적용 */
   .logo.moved {
-    top: 1.25rem;
-    left: 1rem;
     font-size: 20px;
-    transform: translate(0, 0);
   }
 
   /* 헤더 오른쪽 (언어 선택기) */
@@ -623,17 +620,45 @@ function enterApp() {
   var main = document.getElementById('mainContent');
   var headerRight = document.getElementById('headerRight');
 
-  // 스플래시 오버레이 비활성화
+  // 현재 로고 중앙 위치
+  var fromRect = logo.getBoundingClientRect();
+  var fromCX = fromRect.left + fromRect.width / 2;
+  var fromCY = fromRect.top + fromRect.height / 2;
+
+  // 목표: 좌상단 (top: 1.25rem, left: 1rem) 기준, 폰트 20px
+  var targetTop = parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.25;
+  var targetLeft = parseFloat(getComputedStyle(document.documentElement).fontSize) * 1;
+  var scale = 20 / 32; // 목표 폰트 / 현재 폰트
+
+  // 현재 위치에서 목표 위치까지의 delta
+  // 로고 왼쪽 상단 기준으로 이동해야 하므로
+  var deltaX = targetLeft - fromRect.left;
+  var deltaY = targetTop - fromRect.top;
+
+  // 스플래시 비활성화
   splash.classList.add('done');
 
-  // 로고 상단으로 이동
-  logo.classList.add('moved');
+  // transform으로 이동 + 축소 (GPU 가속)
+  logo.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1), font-size 0.65s cubic-bezier(0.4,0,0.2,1)';
+  logo.style.transform = 'translate(calc(-50% + ' + deltaX + 'px), calc(-50% + ' + deltaY + 'px)) scale(' + scale + ')';
+  logo.style.transformOrigin = 'left top';
+
+  // 애니메이션 끝나면 position 확정
+  setTimeout(function() {
+    logo.style.transition = 'none';
+    logo.style.transform = 'none';
+    logo.style.top = targetTop + 'px';
+    logo.style.left = targetLeft + 'px';
+    logo.style.fontSize = '20px';
+    logo.style.cursor = 'default';
+    logo.onclick = null;
+  }, 650);
 
   // 메인 콘텐츠 + 언어선택기 나타남
   setTimeout(function() {
     main.classList.add('visible');
     headerRight.classList.add('visible');
-  }, 300);
+  }, 350);
 }
 
 window.addEventListener('resize', syncCanvas);
