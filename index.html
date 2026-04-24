@@ -40,13 +40,90 @@
   }
 
   /* 헤더 */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.75rem;
+  /* 스플래시 오버레이 */
+  .splash {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    cursor: pointer;
+    pointer-events: auto;
   }
-  h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+  .splash.done {
+    pointer-events: none;
+    background: transparent;
+  }
+
+  /* 로고 — 처음엔 화면 중앙에 절대위치 */
+  .logo {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    user-select: none;
+    cursor: pointer;
+    z-index: 1000;
+    transition: top 0.6s cubic-bezier(0.4,0,0.2,1),
+                left 0.6s cubic-bezier(0.4,0,0.2,1),
+                font-size 0.6s cubic-bezier(0.4,0,0.2,1),
+                transform 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+  /* 상단으로 이동한 상태 */
+  .logo.moved {
+    top: 1.25rem;
+    left: 1rem;
+    font-size: 20px;
+    transform: translate(0, 0);
+  }
+
+  /* 헤더 오른쪽 (언어 선택기) */
+  .header-right {
+    position: fixed;
+    top: 1.25rem;
+    right: 1rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.4s 0.4s;
+    pointer-events: none;
+  }
+  .header-right.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 메인 콘텐츠 */
+  .main-content {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s 0.4s, transform 0.5s 0.4s;
+    pointer-events: none;
+    padding-top: 3.5rem;
+  }
+  .main-content.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .lang-select {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 26px 6px 10px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
   .lang-select {
     font-size: 13px;
     font-weight: 500;
@@ -181,8 +258,14 @@
 </head>
 <body>
 
-<div class="header">
-  <h1>Voiceiver</h1>
+<!-- 스플래시 오버레이 (클릭 감지용) -->
+<div class="splash" id="splash"></div>
+
+<!-- 로고 (항상 최상단 레이어) -->
+<h1 class="logo" id="logo" onclick="enterApp()">Voiceiver</h1>
+
+<!-- 언어 선택기 (우상단 고정) -->
+<div class="header-right" id="headerRight">
   <select class="lang-select" id="langSelect" onchange="onLangChange()">
     <option value="en-US">🇺🇸 English (US)</option>
     <option value="en-GB">🇬🇧 English (UK)</option>
@@ -201,6 +284,9 @@
     <option value="zh-TW">🇹🇼 中文 (繁體)</option>
   </select>
 </div>
+
+<!-- 메인 콘텐츠 -->
+<div class="main-content" id="mainContent">
 
 <div class="status-row">
   <div class="dot" id="dot"></div>
@@ -531,7 +617,27 @@ function showFeedback() {
   document.getElementById('feedbackCard').classList.remove('hidden');
 }
 
+function enterApp() {
+  var splash = document.getElementById('splash');
+  var logo = document.getElementById('logo');
+  var main = document.getElementById('mainContent');
+  var headerRight = document.getElementById('headerRight');
+
+  // 스플래시 오버레이 비활성화
+  splash.classList.add('done');
+
+  // 로고 상단으로 이동
+  logo.classList.add('moved');
+
+  // 메인 콘텐츠 + 언어선택기 나타남
+  setTimeout(function() {
+    main.classList.add('visible');
+    headerRight.classList.add('visible');
+  }, 300);
+}
+
 window.addEventListener('resize', syncCanvas);
 </script>
+</div><!-- /main-content -->
 </body>
 </html>
